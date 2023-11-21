@@ -10,12 +10,14 @@ local M = {}
 
 M.commands = {}
 M.history = {}
+M.local_commands = {}
+M.dir = ""
 
-local function listCommands(t1, t2)
+local function combine(t1, t2)
     local result = {}
 
     for _, value in ipairs(t2) do
-        table.insert(result, value .. " (recent)")
+        table.insert(result, value)
     end
 
     for _, value in ipairs(t1) do
@@ -28,6 +30,39 @@ end
 function M.setup(config)
     config = config or { "" }
     M.commands = config.commands or {}
+    M.dir = config.dir or ""
+
+    if M.dir ~= "" then
+        local file, err = io.open(M.dir, "r")
+        if err then
+            log.error("Error loading private command file" .. err)
+        end
+
+        if file then
+            local contents = file:read("*a")
+            local commands = vim.json.decode(contents)
+
+            if commands then
+                if commands.commands ~= nil then
+                    for _, value in ipairs(commands.commands) do
+                        table.insert(M.local_commands, value)
+                    end
+                else
+                    log.error("Error parsing private command file: commands key not found")
+                end
+            else
+                log.error("Error parsing private command file" .. err)
+            end
+
+
+            if M.local_commands ~= nil then
+                M.commands = combine(M.commands, M.local_commands)
+                print("fzfcommands: Private command file loaded")
+            end
+
+            file:close()
+        end
+    end
 end
 
 function M.open_fzf_finder(opts)
@@ -35,7 +70,7 @@ function M.open_fzf_finder(opts)
     pickers.new(opts, {
         prompt_title = "Choose a command",
         finder = finders.new_table {
-            results = listCommands(M.commands, M.history),
+            results = combine(M.commands, M.history),
         },
         sorter = conf.generic_sorter(opts),
         attach_mappings = function(prompt_bufnr, map)
