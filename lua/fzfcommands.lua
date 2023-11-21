@@ -8,19 +8,14 @@ local log = require("plenary.log")
 
 local M = {}
 
-M.commands = {
-    "ls",
-    "mvn spring-boot:run",
-    "mvn dependency:resolve"
-}
-
+M.commands = {}
 M.history = {}
 
-local function consolidateHistory(t1, t2)
+local function listCommands(t1, t2)
     local result = {}
 
     for _, value in ipairs(t2) do
-        table.insert(result, value .. " (history)")
+        table.insert(result, value .. " (recent)")
     end
 
     for _, value in ipairs(t1) do
@@ -30,12 +25,17 @@ local function consolidateHistory(t1, t2)
     return result
 end
 
+function M.setup(config)
+    config = config or { "" }
+    M.commands = config.commands or {}
+end
+
 function M.open_fzf_finder(opts)
     opts = opts or require("telescope.themes").get_dropdown()
     pickers.new(opts, {
         prompt_title = "Choose a command",
         finder = finders.new_table {
-            results = consolidateHistory(M.commands, M.history),
+            results = listCommands(M.commands, M.history),
         },
         sorter = conf.generic_sorter(opts),
         attach_mappings = function(prompt_bufnr, map)
