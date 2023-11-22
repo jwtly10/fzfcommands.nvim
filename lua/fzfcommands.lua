@@ -4,8 +4,6 @@ local actions = require("telescope.actions")
 local actions_state = require("telescope.actions.state")
 local conf = require("telescope.config").values
 
-local log = require("plenary.log")
-
 local M = {}
 
 M.commands = {}
@@ -13,14 +11,18 @@ M.history = {}
 M.local_commands = {}
 M.dir = ""
 
-local function combine(t1, t2)
+local function combine(t1, t2, flag)
     local result = {}
 
-    for _, value in ipairs(t2) do
-        table.insert(result, value)
+    for _, value in ipairs(t1) do
+        if flag then
+            table.insert(result, value .. " (" .. flag .. ")")
+        else
+            table.insert(result, value)
+        end
     end
 
-    for _, value in ipairs(t1) do
+    for _, value in ipairs(t2) do
         table.insert(result, value)
     end
 
@@ -35,7 +37,7 @@ function M.setup(config)
     if M.dir ~= "" then
         local file, err = io.open(M.dir, "r")
         if err then
-            log.error("Error loading private command file" .. err)
+            error("Error loading private command file" .. err)
         end
 
         if file then
@@ -48,15 +50,15 @@ function M.setup(config)
                         table.insert(M.local_commands, value)
                     end
                 else
-                    log.error("Error parsing private command file: commands key not found")
+                    error("Error parsing private command file: commands key not found")
                 end
             else
-                log.error("Error parsing private command file" .. err)
+                error("Error parsing private command file" .. err)
             end
 
 
             if M.local_commands ~= nil then
-                M.commands = combine(M.commands, M.local_commands)
+                M.commands = combine(M.local_commands, M.commands, "private")
                 print("fzfcommands: Private command file loaded")
             end
 
@@ -70,7 +72,7 @@ function M.open_fzf_finder(opts)
     pickers.new(opts, {
         prompt_title = "Choose a command",
         finder = finders.new_table {
-            results = combine(M.commands, M.history),
+            results = combine(M.history, M.commands, "recent"),
         },
         sorter = conf.generic_sorter(opts),
         attach_mappings = function(prompt_bufnr, map)
@@ -79,7 +81,6 @@ function M.open_fzf_finder(opts)
                 if selection == nil then
                     local picker = actions_state.get_current_picker(prompt_bufnr)
                     local prompt = picker:_get_prompt()
-                    log.info("Manual Command: " .. vim.inspect(prompt))
 
                     -- Add to history
                     table.insert(M.history, prompt)
@@ -90,7 +91,6 @@ function M.open_fzf_finder(opts)
                 end
 
                 actions.close(prompt_bufnr)
-                log.info("Command Selected: " .. vim.inspect(selection[1]))
                 M.run_in_tmux(selection[1])
             end)
 
