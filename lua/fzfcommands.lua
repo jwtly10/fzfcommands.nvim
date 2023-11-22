@@ -99,6 +99,9 @@ function M.run_in_tmux(command)
     local current_directory = vim.fn.getcwd()
     local tmux_command = string.format("tmux split-window -h -c '%s' 'cd %s && %s; read -n 1'", current_directory,
         current_directory, command)
+    -- TBC impl setting for new window
+    -- local tmux_command = string.format("tmux new-window -c '%s' 'cd %s && %s; read -n 1'", current_directory,
+    --     current_directory, command)
     vim.fn.system(tmux_command)
 end
 
