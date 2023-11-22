@@ -11,15 +11,11 @@ M.history = {}
 M.local_commands = {}
 M.dir = ""
 
-local function combine(t1, t2, flag)
+local function combine(t1, t2)
     local result = {}
 
     for _, value in ipairs(t1) do
-        if flag then
-            table.insert(result, value .. " (" .. flag .. ")")
-        else
-            table.insert(result, value)
-        end
+        table.insert(result, value)
     end
 
     for _, value in ipairs(t2) do
@@ -58,7 +54,7 @@ function M.setup(config)
 
 
             if M.local_commands ~= nil then
-                M.commands = combine(M.local_commands, M.commands, "private")
+                M.commands = combine(M.local_commands, M.commands)
                 print("fzfcommands: Private command file loaded")
             end
 
@@ -72,7 +68,7 @@ function M.open_fzf_finder(opts)
     pickers.new(opts, {
         prompt_title = "Choose a command",
         finder = finders.new_table {
-            results = combine(M.history, M.commands, "recent"),
+            results = combine(M.history, M.commands),
         },
         sorter = conf.generic_sorter(opts),
         attach_mappings = function(prompt_bufnr, map)
