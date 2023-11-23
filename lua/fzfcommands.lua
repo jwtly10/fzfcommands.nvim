@@ -10,6 +10,7 @@ M.commands = {}
 M.history = {}
 M.local_commands = {}
 M.dir = ""
+M.settings = {}
 
 local function combine(t1, t2)
     local result = {}
@@ -29,6 +30,7 @@ function M.setup(config)
     config = config or { "" }
     M.commands = config.commands or {}
     M.dir = config.dir or ""
+    M.settings = config.settings or {}
 
     if M.dir ~= "" then
         local file, err = io.open(M.dir, "r")
@@ -97,11 +99,15 @@ end
 
 function M.run_in_tmux(command)
     local current_directory = vim.fn.getcwd()
-    local tmux_command = string.format("tmux split-window -h -c '%s' 'cd %s && %s; read -n 1'", current_directory,
-        current_directory, command)
-    -- TBC impl setting for new window
-    -- local tmux_command = string.format("tmux new-window -c '%s' 'cd %s && %s; read -n 1'", current_directory,
-    --     current_directory, command)
+    local tmux_command = ""
+
+    if M.settings.split then
+        tmux_command = string.format("tmux split-window -h -c '%s' 'cd %s && %s; read -n 1'", current_directory,
+            current_directory, command)
+    else
+        tmux_command = string.format("tmux new-window -c '%s' 'cd %s && %s; read -n 1'", current_directory,
+            current_directory, command)
+    end
     vim.fn.system(tmux_command)
 end
 
