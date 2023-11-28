@@ -9,26 +9,30 @@ local utils = require("utils")
 
 local M = {}
 
+-- Main command list
 M.commands = {}
+-- Historic Commands
 M.history = {}
+-- Local commands from config setup
 M.local_commands = {}
-M.dir = ""
-M.settings = {}
+
+M.config = {}
 
 function M.setup(config)
-    config = config or { "" }
+    M.config = config or {}
     M.commands = config.commands or {}
-    M.dir = config.dir or ""
-    M.settings = config.settings or {}
 
-    if M.dir ~= "" then
-        utils.load_local_commands(M.dir, M.local_commands)
+    if config.settings.dir ~= nil then
+        -- utils.read_local_commands_file(config.settings.dir, M.local_commands)
 
         if M.local_commands ~= nil then
             M.commands = utils.combine(M.local_commands, M.commands)
             print("fzfcommands: Private command file loaded")
         end
     end
+
+    -- Load historic commands
+    utils.load_history(M.history)
 end
 
 function M.open_fzf_finder(opts)
@@ -49,13 +53,13 @@ function M.open_fzf_finder(opts)
                     -- Add to history
                     utils.save_history(M.history, prompt)
 
-                    tmux.run(prompt, M.settings)
+                    tmux.run(prompt, M.config)
                     actions.close(prompt_bufnr)
                     return
                 end
 
                 actions.close(prompt_bufnr)
-                tmux.run(selection[1], M.settings)
+                tmux.run(selection[1], M.config)
             end)
 
             return true
