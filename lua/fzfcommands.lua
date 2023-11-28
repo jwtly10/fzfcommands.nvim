@@ -4,6 +4,9 @@ local actions = require("telescope.actions")
 local actions_state = require("telescope.actions.state")
 local conf = require("telescope.config").values
 
+local tmux = require("tmux_utils")
+local utils = require("utils")
+
 local M = {}
 
 M.commands = {}
@@ -12,20 +15,6 @@ M.local_commands = {}
 M.dir = ""
 M.settings = {}
 
-local function combine(t1, t2)
-    local result = {}
-
-    for _, value in ipairs(t1) do
-        table.insert(result, value)
-    end
-
-    for _, value in ipairs(t2) do
-        table.insert(result, value)
-    end
-
-    return result
-end
-
 function M.setup(config)
     config = config or { "" }
     M.commands = config.commands or {}
@@ -33,34 +22,11 @@ function M.setup(config)
     M.settings = config.settings or {}
 
     if M.dir ~= "" then
-        local file, err = io.open(M.dir, "r")
-        if err then
-            error("Error loading private command file" .. err)
-        end
+        utils.load_local_commands(M.dir, M.local_commands)
 
-        if file then
-            local contents = file:read("*a")
-            local commands = vim.json.decode(contents)
-
-            if commands then
-                if commands.commands ~= nil then
-                    for _, value in ipairs(commands.commands) do
-                        table.insert(M.local_commands, value)
-                    end
-                else
-                    error("Error parsing private command file: commands key not found")
-                end
-            else
-                error("Error parsing private command file" .. err)
-            end
-
-
-            if M.local_commands ~= nil then
-                M.commands = combine(M.local_commands, M.commands)
-                print("fzfcommands: Private command file loaded")
-            end
-
-            file:close()
+        if M.local_commands ~= nil then
+            M.commands = utils.combine(M.local_commands, M.commands)
+            print("fzfcommands: Private command file loaded")
         end
     end
 end
@@ -70,7 +36,7 @@ function M.open_fzf_finder(opts)
     pickers.new(opts, {
         prompt_title = "Choose a command",
         finder = finders.new_table {
-            results = combine(M.history, M.commands),
+            results = utils.combine(M.history, M.commands),
         },
         sorter = conf.generic_sorter(opts),
         attach_mappings = function(prompt_bufnr, map)
@@ -81,34 +47,20 @@ function M.open_fzf_finder(opts)
                     local prompt = picker:_get_prompt()
 
                     -- Add to history
-                    table.insert(M.history, prompt)
+                    utils.save_history(M.history, prompt)
 
-                    M.run_in_tmux(prompt)
+                    tmux.run(prompt, M.settings)
                     actions.close(prompt_bufnr)
                     return
                 end
 
                 actions.close(prompt_bufnr)
-                M.run_in_tmux(selection[1])
+                tmux.run(selection[1], M.settings)
             end)
 
             return true
         end
     }):find()
-end
-
-function M.run_in_tmux(command)
-    local current_directory = vim.fn.getcwd()
-    local tmux_command = ""
-
-    if M.settings.split then
-        tmux_command = string.format("tmux split-window -h -c '%s' 'cd %s && %s; read -n 1'", current_directory,
-            current_directory, command)
-    else
-        tmux_command = string.format("tmux new-window -c '%s' 'cd %s && %s; read -n 1'", current_directory,
-            current_directory, command)
-    end
-    vim.fn.system(tmux_command)
 end
 
 return M
