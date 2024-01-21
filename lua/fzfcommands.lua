@@ -42,6 +42,14 @@ function M.setup(config)
     M.shownList = utils.combine(M.history, M.commands)
 end
 
+function M.run_last_command()
+    local last_command = M.shownList[1]
+    if last_command ~= nil then
+        print("Running: " .. last_command)
+        tmux.run(last_command, M.config)
+    end
+end
+
 function M.open_fzf_finder(opts)
     opts = opts or require("telescope.themes").get_dropdown()
     pickers.new(opts, {
