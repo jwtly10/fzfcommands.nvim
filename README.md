@@ -2,6 +2,18 @@
 
 A Neovim plugin that provides an interactive FZF interface to run custom commands and shell commands in a split-window tmux pane.
 
+## Demo
+Here is a simple demo of the plugin. 
+
+A shortcut open the fzf cmd line, allowing you run new commands or run a previous command. 
+
+I then demonstrate a seperate shortcut allowing you to run the last run command instantly.
+
+All commands are run in a seperate tmux pane, or a full new window (configurable below) 
+
+https://github.com/jwtly10/fzfcommands.nvim/assets/39057715/cb180932-86af-4db9-8feb-1af05c240a23
+
+
 ## Features
 - Interactive picker to select commands using fzf 
 - Specify custom commands in config
@@ -31,6 +43,7 @@ use { 'jwtly10/fzfcommands.nvim' }
 git clone https://github.com/jwtly10/fzfcommands.nvim ~/.config/nvim/pack/plugins/start/fzfcommands.nvim
 ```
 
+### Configuration
 ```lua
 -- Example Config
 require('fzfcommands').setup({
@@ -38,13 +51,16 @@ require('fzfcommands').setup({
     "mvn clean install",
     "git status", 
   },
-  dir = "/path/to/local_commands.json", -- optional local private commands file,
+  settings = {
+        split = true,-- open new tmux pane either split view or new window
+        dir = "/path/to/local_commands.json", -- optional local private commands file,
   -- used to allow private commands which are hidden with .gitignore
+  }
 })
 ```
 
-The local commands JSON file should be in this format:
-
+The local commands JSON file should be in the following format.
+You are free to edit this file to manually load commands, or bulk remove. As long as JSON format is adhered to.
 ```json
 {
   "commands": [
