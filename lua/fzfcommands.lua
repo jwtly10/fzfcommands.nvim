@@ -78,7 +78,12 @@ function M.open_fzf_finder(opts)
                 local picker = actions_state.get_current_picker(prompt_bufnr)
                 local prompt = picker:_get_prompt()
                 -- If we cant find a selection, then we need to get the prompt
-                if selection == nil or selection[1] ~= prompt and string.len(prompt) > 3 then
+                if selection == nil or selection[1] ~= prompt then
+                    -- if somehow the string entered is empty, then we need to do nothing
+                    if string.len(prompt) < 1 then
+                        return
+                    end
+
                     -- Add to history
                     utils.save_history(M.history, prompt)
 
