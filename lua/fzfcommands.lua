@@ -36,10 +36,10 @@ function M.setup(config)
 
     -- Load historic commands
     utils.load_history(M.history)
+    M.shownList = M.history
 
-    -- Build the list of commands
-    -- On init, just combine history and commands
-    M.shownList = utils.combine(M.history, M.commands)
+    -- TODO: Add this functionality back
+    -- M.shownList = utils.combine(M.history, M.commands)
 end
 
 function M.run_last_command()
@@ -51,6 +51,19 @@ function M.run_last_command()
 end
 
 function M.open_fzf_finder(opts)
+    local checkLocalCmds = {}
+    utils.load_history(checkLocalCmds)
+
+    vim.pretty_print(checkLocalCmds)
+    vim.pretty_print(M.history)
+
+    if not utils.deep_compare(checkLocalCmds, M.history) then
+        -- If the file history has changed, then we need to reload the commands
+        print("fzfcommands: Detected local command file change, reloading...")
+        M.history = checkLocalCmds
+        M.shownList = M.history
+    end
+
     opts = opts or require("telescope.themes").get_dropdown()
     pickers.new(opts, {
         prompt_title = "Choose a command",
@@ -71,12 +84,10 @@ function M.open_fzf_finder(opts)
 
                     tmux.run(prompt, M.config)
                     actions.close(prompt_bufnr)
-                    print(prompt)
                     recent_command = prompt
                 else
                     -- Otherwise run the command
                     actions.close(prompt_bufnr)
-                    print(selection[1])
                     tmux.run(selection[1], M.config)
                     recent_command = selection[1]
                 end

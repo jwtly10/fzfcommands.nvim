@@ -1,5 +1,38 @@
 M = {}
 
+-- Check if 2 tables are equal.
+--- @param t1 table: The first table.
+--- @param t2 table: The second table.
+--- @return boolean: True if the tables are equal, false otherwise.
+function M.deep_compare(t1, t2)
+    if type(t1) ~= type(t2) then
+        return false
+    end
+
+    if type(t1) ~= "table" then
+        return t1 == t2
+    end
+
+    -- Compare tables recursively
+    for k, v in pairs(t1) do
+        if not M.deep_compare(v, t2[k]) then
+            return false
+        end
+    end
+
+    for k, v in pairs(t2) do
+        if not M.deep_compare(v, t1[k]) then
+            return false
+        end
+    end
+
+    return true
+end
+
+-- Combine two tables into one.
+--- @param t1 table: The first table.
+--- @param t2 table: The second table.
+--- @return table: The combined table.
 function M.combine(t1, t2)
     local result = {}
 
